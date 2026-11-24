@@ -1,0 +1,64 @@
+name: Publicar animacion web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Obtener los archivos de esta version
+        uses: actions/checkout@v6
+
+      - name: Comprobar y preparar la pagina
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, base64, re
+          pagina = Path('index.html')
+          if not pagina.is_file():
+              raise SystemExit('Falta index.html en la raiz del repositorio. Sube el contenido de la carpeta extraida, no el ZIP.')
+          html = pagina.read_text(encoding='utf-8')
+          for marca in ('application-version', 'income-slider', 'step-select', 'const STEPS ='):
+              if marca not in html:
+                  raise SystemExit('El index.html no corresponde a la animacion completa. Sube el archivo del paquete corregido.')
+          coincidencia = re.search(r'<script id="documentos-incluidos" type="application/json">(.*?)</script>', html, re.S)
+          if not coincidencia:
+              raise SystemExit('Faltan los documentos incluidos en index.html. Sube la version corregida mas reciente.')
+          documentos = json.loads(coincidencia.group(1))
+          if not base64.b64decode(documentos['pdf']['base64']).startswith(b'%PDF-'):
+              raise SystemExit('El documento incluido no es un PDF valido.')
+          if not base64.b64decode(documentos['latex']['base64']).strip().startswith(b'%'):
+              raise SystemExit('Falta el codigo LaTeX incluido.')
+          print('Pagina y materiales verificados.')
+          PY
+          mkdir -p _site
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar los archivos que se van a publicar
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Publicar la animacion
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,392 @@
+% Clase para principiantes. Abrir este archivo en Visual Studio Code.
+% Para generar el PDF: python generar_pdf.py --abrir
+\documentclass[12pt,a4paper,landscape]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1.45cm]{geometry}
+\usepackage{amsmath,amssymb,array,booktabs}
+\usepackage{tikz,pgfplots,fancyhdr}
+\pgfplotsset{compat=1.18}
+\definecolor{peso}{RGB}{35,110,153}
+\definecolor{volumen}{RGB}{179,113,32}
+\definecolor{optimo}{RGB}{145,48,143}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[L]{\small Ejercicio 4. Recolección de basura | Clase paso a paso}
+\fancyfoot[R]{\small\thepage/9}
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\headheight}{0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\renewcommand{\arraystretch}{1.4}
+\newcommand{\titulo}[2]{{\LARGE\bfseries #1}\par
+{\small #2}\par\vspace{2mm}\hrule\vspace{5mm}}
+\newcommand{\nota}[1]{\par\smallskip\noindent\fcolorbox{black!30}{black!3}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#1}}\par\smallskip}
+\newcommand{\bloque}[1]{\par\medskip\noindent\textbf{#1}\par}
+% Los gráficos se construyen con código LaTeX (TikZ/PGFPlots).
+% 1 = peso; 2 = volumen; 3 = zona común; 4 = rectas de ingreso.
+\newcommand{\grafica}[1]{%
+\ifnum#1=1\def\maxx{3300}\def\pasox{600}\else\def\maxx{740}\def\pasox{100}\fi
+\begin{tikzpicture}
+\begin{axis}[
+width=\linewidth,height=11.1cm,
+xmin=-25,xmax=\maxx,ymin=-65,ymax=1950,
+axis lines=middle,xlabel={$x$},ylabel={$y$},
+xtick distance=\pasox,ytick={0,300,...,1800},
+grid=major,grid style={gray!18},tick label style={font=\footnotesize},
+legend style={at={(0.98,0.98)},anchor=north east,font=\footnotesize,draw=gray!25},
+legend cell align=left,clip=false]
+\ifnum#1=1
+  \addplot[draw=none,fill=peso!13] coordinates {(0,0)(3000,0)(0,1500)}\closedcycle;
+  \addlegendentry{Cumple el peso}
+  \addplot[peso,line width=1.3pt,domain=0:3000]{(3000-x)/2};
+  \addlegendentry{$x+2y=3000$}
+  \addplot[only marks,black,mark size=2pt,forget plot] coordinates {(0,1500)(3000,0)(0,0)};
+  \node[anchor=south west,font=\small] at (axis cs:20,1515){$(0,1500)$};
+  \node[anchor=south east,font=\small] at (axis cs:3000,35){$(3000,0)$};
+  \node[anchor=south west,font=\small] at (axis cs:25,20){$(0,0)$};
+\else
+  \ifnum#1=2
+    \addplot[draw=none,fill=volumen!17] coordinates {(0,0)(600,0)(0,1800)}\closedcycle;
+    \addlegendentry{Cumple el volumen}
+    \addplot[volumen,line width=1.3pt,domain=0:600]{1800-3*x};
+    \addlegendentry{$3x+y=1800$}
+    \addplot[only marks,black,mark size=2pt,forget plot] coordinates {(0,1800)(600,0)(0,0)};
+    \node[anchor=west,font=\small] at (axis cs:12,1800){$(0,1800)$};
+    \node[anchor=south east,font=\small] at (axis cs:600,35){$(600,0)$};
+    \node[anchor=south west,font=\small] at (axis cs:8,20){$(0,0)$};
+  \else
+    \addplot[draw=none,fill=green!20] coordinates {(0,0)(600,0)(120,1440)(0,1500)}\closedcycle;
+    \addlegendentry{Región factible}
+    \addplot[peso,thick,domain=0:740]{(3000-x)/2};
+    \addlegendentry{Peso: $x+2y=3000$}
+    \addplot[volumen,thick,domain=0:600]{1800-3*x};
+    \addlegendentry{Volumen: $3x+y=1800$}
+    \addplot[only marks,mark=*,mark size=2pt,black,forget plot] coordinates {(0,0)(600,0)(120,1440)(0,1500)};
+    \node[anchor=south west,font=\footnotesize] at (axis cs:8,15){$A(0,0)$};
+    \node[anchor=south east,font=\footnotesize] at (axis cs:600,25){$B(600,0)$};
+    \node[anchor=north west,font=\footnotesize] at (axis cs:130,1425){$C(120,1440)$};
+    \node[anchor=south west,font=\footnotesize] at (axis cs:5,1520){$D(0,1500)$};
+    \ifnum#1=3
+      \addplot[only marks,mark=x,mark size=3pt,red!65!black,forget plot] coordinates {(0,1800)};
+      \node[anchor=west,font=\footnotesize] at (axis cs:12,1800){$(0,1800)$: no factible};
+    \fi
+    \ifnum#1=4
+      \addplot[gray!80,dashed,thick,domain=0:740]{(600-0.30*x)/0.60};
+      \addlegendentry{Ingreso $k=\$600$}
+      \addplot[gray!80,densely dotted,thick,domain=0:740]{(1050-0.30*x)/0.60};
+      \addlegendentry{Ingreso $k=\$1050$}
+      \addplot[optimo,line width=2.2pt] coordinates {(0,1500)(120,1440)};
+      \addlegendentry{$CD$: ingreso $\$900$}
+    \fi
+  \fi
+\fi
+\end{axis}
+\end{tikzpicture}\par\vspace{2mm}}
+\begin{document}
+
+\titulo{1. Leamos y entendamos el problema}{Antes de escribir fórmulas: ¿qué transportamos, cuánto cabe y qué se quiere conseguir?}
+\bloque{Enunciado completo}
+\begin{minipage}{\textwidth}
+\fontsize{14}{21}\selectfont
+Una compañía de recolección de basura transporta, en su flotilla de camiones, desechos industriales en contenedores sellados. Suponga que cada contenedor de Smith Corporation pesa 6 libras y tiene un volumen de 3 pies cúbicos, mientras que cada contenedor de Johnson Corporation pesa 12 libras y tiene un volumen de 1 pie cúbico. La compañía cobra 30 centavos por cada contenedor que transporta a Smith Corporation, y 60 centavos por cada contenedor que transporta a Johnson Corporation. Si los camiones no pueden transportar más de 18,000 libras o más de 1,800 pies cúbicos, ¿cuántos contenedores de cada cliente se deben transportar en un camión, en cada viaje, para maximizar los ingresos por carga?
+\end{minipage}
+
+\vspace{5mm}
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{6pt}
+\bloque{¿Qué debemos decidir?}
+Cuántos contenedores de cada cliente subir al camión en \textbf{un viaje}.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{6pt}
+\bloque{¿Qué significa maximizar?}
+Buscar el \textbf{mayor ingreso posible}, respetando simultáneamente el peso y el espacio disponibles.
+\end{minipage}
+\nota{No se pide transportar la mayor cantidad total de contenedores. Se pide obtener el mayor \textbf{ingreso por carga}. Cada cliente paga una cantidad diferente.}
+
+\newpage
+\titulo{2. Convertimos las palabras en un modelo}{Una variable representa una cantidad que todavía no conocemos.}
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{6pt}
+\bloque{Paso A. Elegir las variables}
+\[
+x=\text{contenedores de Smith},\qquad y=\text{contenedores de Johnson}.
+\]
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Cliente&Peso&Volumen&Pago\\
+\midrule
+Smith&6 lb&3 pies$^3$&\$0.30\\
+Johnson&12 lb&1 pie$^3$&\$0.60\\
+\bottomrule
+\end{tabular}
+\end{center}
+Los datos de cada fila corresponden a \textbf{un contenedor}.
+
+\bloque{Paso B. Escribir el ingreso}
+30 centavos son \$0.30 y 60 centavos son \$0.60.
+\[
+\underbrace{0.30x}_{\text{pago de Smith}}+
+\underbrace{0.60y}_{\text{pago de Johnson}}=Z.
+\]
+\nota{$Z$ es el ingreso en dólares. $x$ e $y$ son cantidades de contenedores. Por ejemplo, $(x,y)=(100,200)$ produce $0.30(100)+0.60(200)=\$150$.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{6pt}
+\bloque{Paso C. Escribir las limitaciones}
+\textbf{Peso total:} cada contenedor de Smith aporta 6 lb y cada uno de Johnson, 12 lb:
+\[
+6x+12y\leq18000.
+\]
+\textbf{Volumen total:} Smith ocupa 3 pies$^3$ y Johnson, 1 pie$^3$ por contenedor:
+\[
+3x+y\leq1800.
+\]
+\textbf{El signo $\leq$ significa ``menor o igual que''.} Se puede usar menos capacidad o usarla toda, pero no superarla.
+
+\bloque{Modelo completo}
+\[
+\boxed{\begin{gathered}
+\text{Maximizar }Z=0.30x+0.60y\\
+6x+12y\leq18000,\quad 3x+y\leq1800\\
+x\geq0,\quad y\geq0,\quad x,y\text{ enteros}.
+\end{gathered}}
+\]
+No se pueden cargar cantidades negativas ni fracciones de un contenedor. Primero dibujamos la región continua y después revisamos las cantidades enteras.
+\end{minipage}
+
+\newpage
+\titulo{3. Primera inecuación: el peso del camión}{Una inecuación es una relación con un signo como $\leq$; describe una zona del plano.}
+\begin{minipage}[t]{0.56\textwidth}
+\vspace{0pt}\grafica{1}
+\small Eje $x$: contenedores de Smith. Eje $y$: contenedores de Johnson. La zona azul cumple \textbf{solo la limitación de peso}.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.41\textwidth}
+\setlength{\parskip}{5pt}\vspace{0pt}
+\bloque{1. Simplificar sin cambiar la condición}
+Dividimos todos los términos entre 6:
+\[
+6x+12y\leq18000\ \Longleftrightarrow\ x+2y\leq3000.
+\]
+\bloque{2. Dibujar la recta frontera}
+Usamos la igualdad $x+2y=3000$:
+\[
+\begin{aligned}
+x=0&\Rightarrow2y=3000\Rightarrow y=1500,\\
+y=0&\Rightarrow x=3000.
+\end{aligned}
+\]
+Unimos $(0,1500)$ con $(3000,0)$.
+
+\bloque{3. Elegir el lado que cumple}
+Probamos $(0,0)$: $0+2(0)\leq3000$ es verdadero. Sombreamos el lado que contiene al origen.
+\nota{La recta representa cargas que pesan exactamente 18000 lb. Debajo de ella se usa menos peso. La recta se incluye porque el signo permite la igualdad.}
+\end{minipage}
+
+\newpage
+\titulo{4. Segunda inecuación: el espacio disponible}{El volumen se mide en pies cúbicos; indica cuánto espacio ocupan los contenedores.}
+\begin{minipage}[t]{0.56\textwidth}
+\vspace{0pt}\grafica{2}
+\small Eje $x$: Smith. Eje $y$: Johnson. La zona naranja cumple \textbf{solo la limitación de volumen}.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.41\textwidth}
+\setlength{\parskip}{5pt}\vspace{0pt}
+\bloque{1. Partir de la restricción}
+\[
+3x+y\leq1800.
+\]
+\bloque{2. Calcular los cortes de la frontera}
+Para la recta $3x+y=1800$:
+\[
+\begin{aligned}
+x=0&\Rightarrow y=1800,\\
+y=0&\Rightarrow3x=1800\Rightarrow x=600.
+\end{aligned}
+\]
+Unimos $(0,1800)$ con $(600,0)$.
+
+\bloque{3. Elegir el lado correcto}
+El origen cumple: $3(0)+0\leq1800$. Sombreamos el lado que lo contiene.
+\nota{$(0,1800)$ significa \textbf{0 contenedores de Smith y 1800 de Johnson}. Ese 1800 no representa dólares. Todavía debemos comprobar si esa carga cumple el peso.}
+\end{minipage}
+
+\newpage
+\titulo{5. Las dos restricciones deben cumplirse a la vez}{Región factible: conjunto de cargas que sí caben y no superan el peso permitido.}
+\begin{minipage}[t]{0.56\textwidth}
+\vspace{0pt}\grafica{3}
+\small La zona verde es común a ambas condiciones. Se amplía la vista: el corte $(3000,0)$ de la recta de peso queda fuera del encuadre.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.41\textwidth}
+\setlength{\parskip}{5pt}\vspace{0pt}
+\bloque{Ejemplo de una carga que sí se permite}
+Para $(x,y)=(100,200)$:
+\[
+\begin{aligned}
+\text{Peso: }6(100)+12(200)&=3000\leq18000,\\
+\text{Volumen: }3(100)+200&=500\leq1800.
+\end{aligned}
+\]
+Cumple ambas y está dentro de la región verde.
+
+\bloque{Ejemplo de una carga que no se permite}
+Para $(0,1800)$, el volumen es 1800 pies$^3$, pero el peso es:
+\[
+6(0)+12(1800)=21600>18000.
+\]
+Por eso queda fuera de la zona verde. Cumplir una sola restricción no basta.
+\nota{Los números sobre los ejes indican \textbf{contenedores}. Los coeficientes 6, 12, 3 y 1 permiten calcular peso y volumen. Los dólares se calculan con $Z=0.30x+0.60y$.}
+\end{minipage}
+
+\newpage
+\titulo{6. Encontramos la intersección y los vértices}{Un vértice es una esquina de la región factible; una intersección es el cruce de dos rectas.}
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{5pt}
+\bloque{Paso A. Resolver las dos fronteras juntas}
+En su punto de cruce se usa todo el peso y todo el volumen:
+\[
+\begin{cases}
+x+2y=3000,\\
+3x+y=1800.
+\end{cases}
+\]
+Despejamos $y$ en la segunda: $y=1800-3x$.
+
+Sustituimos esa expresión en la primera:
+\[
+\begin{aligned}
+x+2(1800-3x)&=3000&&\text{(sustitución)},\\
+x+3600-6x&=3000&&\text{(distributiva)},\\
+-5x&=-600&&\text{(simplificación)},\\
+x&=120&&\text{(dividir entre }-5\text{)}.
+\end{aligned}
+\]
+Luego $y=1800-3(120)=1440$.
+\[
+\boxed{C=(120,1440)}
+\]
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{5pt}
+\bloque{Paso B. Identificar todas las esquinas}
+\begin{center}
+\begin{tabular}{@{}clp{6.6cm}@{}}
+\toprule
+Punto&Coordenadas&¿De dónde sale?\\
+\midrule
+$A$&$(0,0)$&Cruce de los ejes.\\
+$B$&$(600,0)$&Frontera de volumen con el eje $x$.\\
+$C$&$(120,1440)$&Cruce de peso y volumen.\\
+$D$&$(0,1500)$&Frontera de peso con el eje $y$.\\
+\bottomrule
+\end{tabular}
+\end{center}
+\bloque{¿Por qué evaluamos los vértices?}
+En este modelo continuo, la región es un polígono cerrado y acotado y el ingreso es una función lineal. El máximo se alcanza al menos en uno de sus vértices. Si dos vértices vecinos alcanzan el mismo máximo, todo el lado que los une también es óptimo.
+\nota{Encontrar $C$ no basta para afirmar que es el máximo. Debemos calcular y comparar los ingresos. Después verificamos que las cantidades elegidas sean enteras.}
+\end{minipage}
+
+\newpage
+\titulo{7. Ahora convertimos contenedores en dinero}{Coordenadas e ingresos son cosas distintas: un punto $(x,y)$ se sustituye en $Z$.}
+\[
+Z=\underbrace{0.30x}_{\text{dólares cobrados a Smith}}+
+\underbrace{0.60y}_{\text{dólares cobrados a Johnson}}.
+\]
+\begin{center}
+\begin{tabular}{@{}ccrrrr@{}}
+\toprule
+Punto&Smith $x$ / Johnson $y$&Ingreso Smith&Ingreso Johnson&Operación&Ingreso total\\
+\midrule
+$A$&$(0,0)$&$0.30(0)=\$0$&$0.60(0)=\$0$&$0+0$&\$0\\
+$B$&$(600,0)$&$0.30(600)=\$180$&$0.60(0)=\$0$&$180+0$&\$180\\
+$C$&$(120,1440)$&$0.30(120)=\$36$&$0.60(1440)=\$864$&$36+864$&\textbf{\$900}\\
+$D$&$(0,1500)$&$0.30(0)=\$0$&$0.60(1500)=\$900$&$0+900$&\textbf{\$900}\\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{6pt}
+\bloque{Leamos el punto $C$}
+$x=120$ significa 120 contenedores de Smith.
+
+$y=1440$ significa 1440 contenedores de Johnson.
+
+$Z=900$ significa \textbf{900 dólares de ingreso}.
+\[
+0.30(120)+0.60(1440)=36+864=\$900.
+\]
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{6pt}
+\bloque{Leamos el punto $D$}
+$x=0$ y $y=1500$ significan que toda la carga es de Johnson.
+\[
+0.30(0)+0.60(1500)=\$900.
+\]
+\textbf{Empata con $C$.} Aunque $1440\neq1500$, los ingresos son iguales porque $C$ también incluye el pago de 120 contenedores de Smith.
+\end{minipage}
+\nota{El número 900 que aparece como marca del eje $y$ significa 900 contenedores de Johnson. El resultado $Z=\$900$ se obtiene mediante la fórmula de ingresos; no se lee como altura en este gráfico.}
+
+\newpage
+\titulo{8. ¿Por qué el máximo es \$900?}{Una recta de ingreso reúne distintas cargas que producen la misma cantidad de dinero.}
+\begin{minipage}[t]{0.56\textwidth}
+\vspace{0pt}\grafica{4}
+\small Las rectas discontinuas muestran ingresos de \$600 y \$1050. El segmento morado $CD$ produce \$900.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.41\textwidth}
+\setlength{\parskip}{5pt}\vspace{0pt}
+\bloque{1. Leer el desplazamiento de la recta}
+Si $0.30x+0.60y=k$, aumentar $k$ mueve la recta de ingreso hacia arriba.
+
+Con $k=600$, la recta cruza la región verde. Con $k=900$, coincide con el lado $CD$. Con $k=1050$, no toca ningún punto factible.
+\bloque{2. Comprobarlo con una desigualdad}
+La restricción de peso dice $x+2y\leq3000$. Multiplicando por 0.30:
+\[
+\underbrace{0.30(x+2y)}_{Z}\leq0.30(3000)=900.
+\]
+Ninguna carga permitida puede dar más de \$900. Como $C$ y $D$ sí lo logran, ese es el máximo.
+\nota{Sobre todo $CD$ se cumple $x+2y=3000$, por lo que $Z=900$. No hay un único punto óptimo en el modelo continuo.}
+\end{minipage}
+
+\newpage
+\titulo{9. Respuesta final y comprobación de la carga}{Terminamos expresando la solución en las palabras y unidades del problema.}
+\nota{\textbf{Una solución óptima es transportar 120 contenedores de Smith y 1440 de Johnson en un camión, en cada viaje. El ingreso máximo es de \$900 por carga.}}
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{5pt}
+\bloque{Comprobamos que la respuesta sea posible}
+\[
+\begin{aligned}
+\text{Peso: }&6(120)+12(1440)\\
+&=720+17280=18000\text{ lb}.\\[3pt]
+\text{Volumen: }&3(120)+1440\\
+&=360+1440=1800\text{ pies}^3.\\[3pt]
+\text{Ingreso: }&0.30(120)+0.60(1440)\\
+&=36+864=\boxed{\$900}.
+\end{aligned}
+\]
+Usa exactamente ambas capacidades. Las cantidades son enteras y no negativas.
+
+\bloque{También hay otras respuestas óptimas}
+Por ejemplo, 0 de Smith y 1500 de Johnson pesan 18000 lb, ocupan 1500 pies$^3$ e ingresan \$900. Sobran 300 pies$^3$, pero no se puede agregar carga porque ya se alcanzó el peso máximo.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\setlength{\parskip}{5pt}
+\bloque{Para profundizar: contenedores completos}
+Sobre $CD$, $y=1500-x/2$ y $0\leq x\leq120$. Para que $y$ sea entero, $x$ debe ser par.
+
+Por tanto, las cargas óptimas enteras son:
+\[
+(x,y)=(2k,1500-k),\qquad k=0,1,\ldots,60.
+\]
+Hay \textbf{61 combinaciones enteras óptimas}, desde $(0,1500)$ hasta $(120,1440)$.
+
+\bloque{Tres preguntas para revisar lo aprendido}
+\textbf{¿Qué representa 1440?} Contenedores de Johnson en la carga $C$; no dólares.
+
+\textbf{¿Por qué no elegimos $(0,1800)$?} Porque pesa 21600 lb y supera las 18000 lb permitidas.
+
+\textbf{¿Qué comparación decide el máximo?} La comparación de los valores de $Z$ de las cargas factibles.
+\end{minipage}
+\end{document}
